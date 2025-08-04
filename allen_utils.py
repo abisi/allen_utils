@@ -163,35 +163,74 @@ def generalize_region(region):
     """Generalize region names based on predefined rules."""
     region_map = {
         "ACA": "ACA",
+        "AD":"ATN",
         "AI": "AI",
+        "AMd":"ATN",
+        "AMv":"ATN",
+        "AON":"OLF",
+        "APN":"MB",
         "AUD": "AUD",
+        "AV":"ATN",
+        "BLAp":"BLA",
         "BST":"PAL",
         "CEA": "CEA",
+        "CL": "ILM",
+        "CM":"ILM",
         "DG": "DG",
-        "Eth": "LAT", # confirm
+        "Eth": "LAT",
         "EPd": "EP",
         "EPv": "EP",
-        "IGL":"LGN", # confirm
-        "IntG":"LGN", # confirm
-        "INC":"PAG", # confirm
-        "LD":"ATN", # confirm
+        'HPF':'HPF',
+        "HY":"HY",
+        "IG":"HPF",
+        "IGL":"LGN",
+        "IntG":"LGN",
+        "INC":"PAG",
+        "LD":"ATN",
         "LGd": "LGN",
         "LGv": "LGN",
+        "LH":"HA",
         "LS": "LS",
-        "LT": "MY", # confirm
-        "MS":"LGN", #confirm
-        "MGm":"MGN", # confirm
+        "LT": "MY",
+        "MD":"MED",
+        "MH":"HA",
+        "MS":"LGN",
+        "MGm":"MGN",
+        "MGv":"MGN",
+        "MGd":"MGN",
+        "MMd":"HY",
+        "MMme":"HY",
+        "NLL":"Pons",
+        "NPC":"MB",
         "ORB": "ORB",
+        "P":"Pons", # make sure it's only Pons
         "PAL": "PAL",
-        "POL":"LAT", # confirm
-        "PRNr":"Pons", # confirm
-        "RR":"MRN",     # confirm
+        "PIL":"ILM", # confirm, also, use DORpm vs DORsm ? PIL-PP in lit.
+        "PIR":"OLF",
+        "POL":"LAT",
+        "POST":"HPF",
+        "PoT":"VP",
+        "PP":"ILM",# PIL-PP in lit., ILMN: intralaminar nuclei
+        "PPN":"MB",
+        "PR":"MED",
+        "PRC":"PAG",
+        "PRNr":"Pons",
+        "RE":"MTN",
+        "RPF":"MB",
+        "RR":"MRN",
         "RSP": "RSP",
-        "SI":"PAL",     # confirm
+        "SAG":"MB",
+        "SGN":"LAT",
+        "SI":"PAL",
+        "SMT":"MED",
         "STR": "STR",
+        "SUM":"HY",
         "TEa": "TEa",
+        "TRS":"PAL",
         "VPL": "VPL",
         "VPM": "VPM",
+        "VM":"VPM",
+        "Xi":"MTN"
     }
     for key in region_map:
         if region.startswith(key):
@@ -199,6 +238,9 @@ def generalize_region(region):
 
     if region.startswith("LA"):
         return "LAT" if region.startswith("LAT") else "LA"
+
+    if region.startswith("MY"): #medulla
+        return "MY"
 
     if region.startswith("SC"):
         return "SCm" if region in ["SCdg", "SCdw", "SCig", "SCiw"] else "SCs"
@@ -268,14 +310,14 @@ def get_custom_area_order():
     area_order = ['MOp', 'MOs', 'FRP', 'ACA', 'PL', 'ORB', 'AI',
                   'SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un',
                   'AUD', 'RSP',
-                  'CLA', 'EP', 'LA',
-                  'CA1', 'CA2', 'CA3', 'DG',
-                  'CP', 'STR', 'ACB', 'CEA', 'LS', 'SF', 'GPe', 'PAL', 'MS',
-                  'VPL', 'VPM', 'AV', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN',
+                  'CLA', 'EP',
+                  'CA1', 'CA2', 'CA3', 'DG', 'HPF',
+                  'CP', 'STR', 'ACB', 'LS', 'SF', 'GPe', 'PAL', 'MS',
+                  'VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA',
                   'SCs', 'SCm', 'MB', 'VTA', 'MRN', 'PAG', 'RN', 'SNr',
-                  'Pons',
+                  'Pons', 'MY',
                   'AON', 'OLF', 'PIR',
-                  'ZI']
+                  'BLA', 'LA', 'CEA','HY', 'ZI']
     return area_order
 
 def get_custom_area_groups():
@@ -288,14 +330,14 @@ def get_custom_area_groups():
         'Somatosensory areas': ['SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un'],
         'Auditory areas': ['AUD'],
         'Retrosplenial areas': ['RSP'],
-        'Cortical subplate': ['CLA', 'EP', 'LA'],
-        'Hippocampus': ['CA1', 'CA2', 'CA3', 'DG'],
-        'Striatal and pallidum': ['CP', 'STR', 'ACB', 'CEA', 'LS', 'SF', 'GPe', 'PAL', 'MS'],
-        'Thalamus': ['VPL', 'VPM', 'AV', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN'],
+        'Cortical subplate': ['CLA', 'EP'],
+        'Hippocampus': ['CA1', 'CA2', 'CA3', 'DG', 'HPF'],
+        'Striatal and pallidum': ['CP', 'STR', 'ACB', 'LS', 'SF', 'GPe', 'PAL', 'MS'],
+        'Thalamus': ['VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA'],
         'Midbrain': ['SCs', 'SCm', 'MB', 'VTA', 'MRN', 'PAG', 'RN', 'SNr'],
-        'Pons': ['Pons'],
+        'Pons and medulla': ['Pons', 'MY'],
         'Olfactory areas': ['AON', 'OLF', 'PIR'],
-        'Hypothalamus': ['ZI']
+        'Amygdala and hypothalamus': ['BLA', 'LA', 'CEA', 'HY', 'ZI']
     }
     return area_groups
 
@@ -321,9 +363,9 @@ def get_custom_area_groups_colors():
         'Striatal and pallidum': '#98d6f9',
         'Thalamus': '#ff7080',
         'Midbrain': '#ff64ff',
-        'Pons': '#ffc395',
+        'Pons and medulla': '#ffc395',
         'Olfactory areas': '#9ad2bd',
-        'Hypothalamus': '#f2483b'
+        'Amygdala and hypothalamus': '#f2483b'
 
     }
     return area_group_colors
@@ -362,7 +404,7 @@ def apply_target_region_filters(peth_table, area):
         'wM1': ['MOp', 'MOs'],
         'wS2': ['SSs'],
         'wM2': ['MOp', 'MOs'],
-        'mPFC': ['PL', 'ILA'],
+        'mPFC': ['PL', 'ILA', 'ACA', 'ACAd', 'ACAv'],
         'tjM1': ['MOp', 'MOs'],
         'A1': ['AUD', 'AUDd', 'AUDp', 'AUDv', 'AUDpo'],
         'DLS': ['STRd', 'CP'],
@@ -370,6 +412,7 @@ def apply_target_region_filters(peth_table, area):
         'OFC': ['ORB', 'ORBm', 'ORBl', 'ORBvl'],
         'ACA': ['ACA', 'ACAd', 'ACAv'],
         'ALM': ['MOp', 'MOs'],
+        'PPC': ['VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr'],
     }
 
     if area in specific_filters.keys():
