@@ -9,6 +9,7 @@
 # Imports
 import os
 import json
+import pandas as pd
 import numpy as np
 import re
 
@@ -58,98 +59,6 @@ def get_excluded_areas():
                       'nan'
                       ]
     return excluded_areas
-
-
-def create_area_custom_column_old(df): # TODO: old version, to delete
-    """
-    Create a new column 'area_custom' based on 'ccf_acronym' and 'ccf_parent_acronym'.
-    - If ccf_acronym contains a layer number, use ccf_parent_acronym unless the region is CA1, CA2, or CA3.
-    - Simplifies visual areas (e.g., VISpm, VISa, VISal) to "VIS".
-    - Simplifies auditory areas (e.g., AUDd, AUDpo, AUDp, AUDv) to "AUD".
-    - Simplifies ORBv to "ORB".
-    - Handles specific cases like SSp-bfd barrel indications (e.g., SSp-bfd-C4 -> SSp-bfd).
-
-    :param df: A pandas DataFrame containing 'ccf_acronym' and 'ccf_parent_acronym' columns.
-    :return: DataFrame with a new column 'area_custom'.
-    """
-
-    def simplify_area(ccf_acronym, ccf_parent_acronym):
-        # Helper to check if the region contains a layer number
-        def contains_layer(region):
-            return bool(re.search(r'\d+[a-zA-Z]*', region))  # e.g., "6a", "6b"
-
-        # Helper to generalize regions (e.g., VISpm -> VIS, AUDd -> AUD, ORBv -> ORB)
-        def generalize_region(region):
-            if region.startswith("ACA"):
-                return "ACA"
-            elif region.startswith("AI"):
-                return "AI"
-            elif region.startswith("AUD"):
-                return "AUD"
-            elif region.startswith("CEA"):
-                return "CEA"
-            elif region.startswith("DG"):
-                return "DG"
-            elif region.startswith("EPd") or region.startswith("EPv"):
-                return "EP"
-            elif region.startswith("LGd") or region.startswith("LGv"):
-                return "LGN"
-            elif region.startswith("LS"):
-                return "LS"
-            elif region.startswith("ORB"):
-                return "ORB"
-            elif region.startswith("PAL"):
-                return "PAL"
-            elif region.startswith("RSP"):
-                return "RSP"
-            elif region.startswith("SC"):
-                if region in ["SCdg", "SCdw", "SCig", "SCiw"]:
-                    return "SCm"
-                elif region in ["SCop", "SCsg", "SCzo"]:
-                    return "SCs"
-            elif region.startswith("SSp-bfd"):
-                return "SSp-bfd"
-            elif region.startswith("STR"):
-                return "STR"
-            elif region.startswith("TEa"):  # although cortical, TEa has a different hierarchy
-                return "TEa"
-            elif region.startswith("VIS"):
-                if region.startswith("VISC"):
-                    return "VISC"
-                else:
-                    return "VIS"
-            elif region.startswith("VPL"):
-                return "VPL"
-            elif region.startswith("VPM"):
-                return "VPM"
-            else:
-                return region
-
-        # Special case: Handle SSp-bfd barrels (e.g., "SSp-bfd-C4" -> "SSp-bfd")
-        def handle_ssp_bfd(region):
-            if "SSp-bfd" in region:
-                return re.sub(r'SSp-bfd-[A-Z]\d+', 'SSp-bfd', region)
-            return region
-
-        # Step 1: If ccf_acronym contains a layer number, decide between ccf_acronym and ccf_parent_acronym
-        if contains_layer(ccf_acronym):
-            if ccf_acronym in ['CA1', 'CA2', 'CA3']:  # For CA1, CA2, CA3
-                base_region = ccf_acronym
-            else:
-                base_region = ccf_parent_acronym
-        else:
-            base_region = ccf_acronym
-
-        # Step 2: Generalize the region and handle special cases
-        generalized_region = generalize_region(base_region)
-        generalized_region = handle_ssp_bfd(generalized_region)
-
-        return generalized_region
-
-    # Apply the function to each row and create the new column
-    df['area_custom'] = df.apply(lambda row: simplify_area(row['ccf_acronym'], row['ccf_parent_acronym']), axis=1)
-
-    return df
 
 
 def contains_layer(region):
@@ -307,12 +216,12 @@ def get_custom_area_order():
     """
     Get the order of brain areas for plotting.
     """
-    area_order = ['MOp', 'MOs', 'FRP', 'ACA', 'PL', 'ORB', 'AI',
+    area_order = ['MOp', 'MOs', 'MOs-a', 'MOs-m', 'MOs-p', 'FRP', 'ACA', 'PL', 'ORB', 'AI',
                   'SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un',
                   'AUD', 'RSP',
                   'CLA', 'EP',
                   'CA1', 'CA2', 'CA3', 'DG', 'HPF',
-                  'CP', 'STR', 'ACB', 'LS', 'SF', 'GPe', 'PAL', 'MS',
+                  'CP', 'DMS', 'DLS', 'TS', 'STR', 'ACB', 'VS', 'LS', 'SF', 'GPe', 'PAL', 'MS',
                   'VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA',
                   'SCs', 'SCm', 'MB', 'VTA', 'MRN', 'PAG', 'RN', 'SNr',
                   'Pons', 'MY',
@@ -326,13 +235,13 @@ def get_custom_area_groups():
     """
 
     area_groups = {
-        'Motor and frontal areas': ['MOp', 'MOs', 'FRP', 'ACA', 'PL', 'ORB', 'AI'],
+        'Motor and frontal areas': ['MOp', 'MOs', 'MOs-a', 'MOs-m', 'MOs-p', 'FRP', 'ACA', 'PL', 'ORB', 'AI'],
         'Somatosensory areas': ['SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un'],
         'Auditory areas': ['AUD'],
         'Retrosplenial areas': ['RSP'],
         'Cortical subplate': ['CLA', 'EP'],
         'Hippocampus': ['CA1', 'CA2', 'CA3', 'DG', 'HPF'],
-        'Striatal and pallidum': ['CP', 'STR', 'ACB', 'LS', 'SF', 'GPe', 'PAL', 'MS'],
+        'Striatum and pallidum': ['CP', 'DMS', 'DLS', 'TS', 'STR', 'VS', 'ACB', 'LS', 'SF', 'GPe', 'PAL', 'MS'],
         'Thalamus': ['VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA'],
         'Midbrain': ['SCs', 'SCm', 'MB', 'VTA', 'MRN', 'PAG', 'RN', 'SNr'],
         'Pons and medulla': ['Pons', 'MY'],
@@ -360,7 +269,7 @@ def get_custom_area_groups_colors():
         'Retrosplenial areas': '#1aa698',
         'Cortical subplate': '#8ada87',
         'Hippocampus': '#7ed04b',
-        'Striatal and pallidum': '#98d6f9',
+        'Striatum and pallidum': '#98d6f9',
         'Thalamus': '#ff7080',
         'Midbrain': '#ff64ff',
         'Pons and medulla': '#ffc395',
@@ -402,7 +311,7 @@ def apply_target_region_filters(peth_table, area):
     specific_filters = {
         'wS1': ['SSp-bfd'],
         'wM1': ['MOp', 'MOs'],
-        'wS2': ['SSs'],
+        'wS2': ['SSs', 'SSp-bfd'],
         'wM2': ['MOp', 'MOs'],
         'mPFC': ['PL', 'ILA', 'ACA', 'ACAd', 'ACAv'],
         'tjM1': ['MOp', 'MOs'],
@@ -410,13 +319,12 @@ def apply_target_region_filters(peth_table, area):
         'DLS': ['STRd', 'CP'],
         'SC': ['SC', 'SCs', 'SCiw', 'SCop', 'SCm', 'SCzo', 'SCsg'],
         'OFC': ['ORB', 'ORBm', 'ORBl', 'ORBvl'],
-        'ACA': ['ACA', 'ACAd', 'ACAv'],
         'ALM': ['MOp', 'MOs'],
         'PPC': ['VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr'],
     }
 
     if area in specific_filters.keys():
-        # For wS1, keep only wS1/C2-targeted recordings and exclude SSPp-bfd obtained from other targets
+        # Keep only areas specified in filter and actually targeted e.g. SSp-bfd
         peth_area = peth_table[(peth_table['area_acronym_custom'].isin(specific_filters[area]))
                                 & (peth_table['target_region'] == area)]
     else:
@@ -424,3 +332,110 @@ def apply_target_region_filters(peth_table, area):
         peth_area = None
 
     return peth_area
+
+def create_bregma_centric_coords_from_ccf(df):
+    """Convert CCF coordinates in BrainGlobe space into bregma-centric coordinates,
+    i.e. from (0,0,0)=(A,S,R) anterior top right corner to (0,0,0)=bregma.
+    Using IBL bregma estimate:
+     https://docs.internationalbrainlab.org/_autosummary/iblatlas.atlas.ALLEN_CCF_LANDMARKS_MLAPDV_UM.html"""
+    df[['ccf_ap', 'ccf_ml', 'ccf_dv']] = df[['ccf_ap', 'ccf_ml', 'ccf_dv']].astype(float)
+    # TODO: update fcn after new NWBs
+    new_nwb_mice = ['AB080', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095', 'AB129', 'AB130']
+
+    # Define conversion functions
+    #ml = (self.channels['x'] * 1e6) + 5739
+    # Define conversion functions
+    def func_to_ml(row):
+        to_ml = lambda x: x - 5739
+        if row['mouse_id'] in new_nwb_mice:
+            return to_ml(row['ccf_ml'])
+        else:
+            return to_ml(row['ccf_dv']) #TODO: note, DV-ML inverted in NWB_Conversion -> update after new NWBs!
+
+    #ap = (-self.channels['y'] * 1e6) + 5400
+    def func_to_ap(row):
+        to_ap = lambda x: -x + 5400 # AP positive is anterior relative to bregma
+        if row['mouse_id'] in new_nwb_mice:
+            return to_ap(row['ccf_ap'])
+        else:
+            return to_ap(row['ccf_ap'])
+    #dv = (abs(self.channels['z'] * 1e6)) + 332
+    def func_to_dv(row):
+        to_dv = lambda x: x - 332
+        if row['mouse_id'] in new_nwb_mice:
+            return to_dv(row['ccf_dv'])
+        else:
+            return to_dv(row['ccf_ml']) #TODO: note, DV-ML inverted in NWB_Conversion -> update after new NWBs!
+
+    # Apply conversions
+    df['ap'] = df.apply(func_to_ap, axis=1)
+    df['ml'] = df.apply(func_to_ml, axis=1)
+    df['dv'] = df.apply(func_to_dv, axis=1)
+
+    return df
+
+def create_areas_subdivisions(df):
+    """
+    Divide large areas into smaller subdivisions for better visualization.
+    :param df: unit_table pd.DataFrame with columns 'area_acronym_custom', 'ap', 'ml', 'dv'.
+    :return:
+    """
+    parent_child_dict = {
+        'CP': ['DMS', 'DLS', 'TS', 'VS'],
+        'MOs': ['MOs-a', 'MOs-m', 'MOs-p']
+    }
+
+    coord_boundaries = {
+        'DMS': {'ap': (150, 5000), 'ml': (0, 2300), 'dv': (0, 4000)},
+        'DLS': {'ap': (-1500, 150), 'ml': (2300, 5000), 'dv': (0, 4000)},
+        'TS': {'ap': (-5000, -1500), 'ml': (-np.inf, np.inf), 'dv': (0, 4000)},
+        'VS': {'ap': (150, 5000), 'ml': (-np.inf, np.inf), 'dv': (4000, 5000)},
+        'MOs-a': {'ap': (2500, 5000), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
+        'MOs-m': {'ap': (1500, 2500), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
+        'MOs-p': {'ap': (0, 1500), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
+    }
+
+    for parent_area, subdivisions in parent_child_dict.items():
+        # Filter rows belonging to the parent area once
+        parent_mask = df['area_acronym_custom'] == parent_area
+
+        for sub_area in subdivisions:
+            bounds = coord_boundaries[sub_area]
+
+            # Create masks for each axis considering infinite bounds
+            ap_mask = df['ap'].between(*bounds['ap']) if np.isfinite(bounds['ap'][0]) and np.isfinite(bounds['ap'][1]) \
+                else pd.Series(True, index=df.index)
+            ml_mask = df['ml'].between(*bounds['ml']) if np.isfinite(bounds['ml'][0]) and np.isfinite(bounds['ml'][1]) \
+                else pd.Series(True, index=df.index)
+            dv_mask = df['dv'].between(*bounds['dv']) if np.isfinite(bounds['dv'][0]) and np.isfinite(bounds['dv'][1]) \
+                else pd.Series(True, index=df.index)
+
+            mask = parent_mask & ap_mask & ml_mask & dv_mask
+            df.loc[mask, 'area_acronym_custom'] = sub_area
+
+    return df
+
+def process_allen_labels(df, params):
+    """
+    Process the DataFrame to create custom area acronyms, layer numbers, and bregma-centric coordinates.
+    :param df: unit_table pd.DataFrame from NWB files
+    :param params: dictionary of parameters
+    :return:
+    """
+    # Create custom area acronyms simplifying ccf areas acronyms
+    df = create_area_custom_column(df)
+
+    # Create layer number column
+    df = create_layer_number_column(df)
+
+    # Create a ccf_acronym_no_layer column, copy of ccf_acronym just without layer info
+    df = create_ccf_acronym_no_layer_column(df)
+
+    # Create bregma-centric coordinates, going from CCf (BrainGlobe) to bregma-centric coordinates using IBL bregma estimate
+    df = create_bregma_centric_coords_from_ccf(df)
+
+    # Create areas subdivisions for specific areas using custom boundaries
+    if params['subdivide_areas']:
+        df = create_areas_subdivisions(df)
+
+    return df
