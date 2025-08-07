@@ -334,15 +334,23 @@ def apply_target_region_filters(peth_table, area):
     return peth_area
 
 def create_bregma_centric_coords_from_ccf(df):
-    """Convert CCF coordinates in BrainGlobe space into bregma-centric coordinates,
+    """
+    Convert CCF coordinates in BrainGlobe space into bregma-centric coordinates.
     i.e. from (0,0,0)=(A,S,R) anterior top right corner to (0,0,0)=bregma.
     Using IBL bregma estimate:
-     https://docs.internationalbrainlab.org/_autosummary/iblatlas.atlas.ALLEN_CCF_LANDMARKS_MLAPDV_UM.html"""
+    https://docs.internationalbrainlab.org/_autosummary/iblatlas.atlas.ALLEN_CCF_LANDMARKS_MLAPDV_UM.html
+    :param df: unit_table pd.DataFrame with columns 'ccf_ap', 'ccf_ml', 'ccf_dv', and 'mouse_id'.
+    :return:
+    """
+    # Convert columns to numeric
     df[['ccf_ap', 'ccf_ml', 'ccf_dv']] = df[['ccf_ap', 'ccf_ml', 'ccf_dv']].astype(float)
-    # TODO: update fcn after new NWBs
-    new_nwb_mice = ['AB080', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095', 'AB129', 'AB130']
 
-    # Define conversion functions
+    # TODO: update fcn after new NWBs
+    new_nwb_mice = ['AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
+                    'AB102', 'AB104', 'AB107',
+                    'AB129', 'AB130']
+
+    # Define conversion functions (all in um)
     #ml = (self.channels['x'] * 1e6) + 5739
     # Define conversion functions
     def func_to_ml(row):
@@ -381,26 +389,37 @@ def create_areas_subdivisions(df):
     :return:
     """
     parent_child_dict = {
-        'CP': ['DMS', 'DLS', 'TS', 'VS'],
+        'CP': ['DLS', 'DMS', 'VS', 'TS'], # assignment order
         'MOs': ['MOs-a', 'MOs-m', 'MOs-p']
     }
 
     coord_boundaries = {
-        'DMS': {'ap': (150, 5000), 'ml': (0, 2300), 'dv': (0, 4000)},
-        'DLS': {'ap': (-1500, 150), 'ml': (2300, 5000), 'dv': (0, 4000)},
-        'TS': {'ap': (-5000, -1500), 'ml': (-np.inf, np.inf), 'dv': (0, 4000)},
-        'VS': {'ap': (150, 5000), 'ml': (-np.inf, np.inf), 'dv': (4000, 5000)},
+        'DMS': {'ap': (-1500, 6000), 'ml': (0, 2300), 'dv': (0, 7000)},
+        #'DLS': {'ap': (-1500, 150), 'ml': (2300, 6000), 'dv': (0, 7000)},
+        'DLS': {'ap': (-1500, 6000), 'ml': (2300, 6000), 'dv': (0, 7000)},
+        'TS': {'ap': (-6000, -1500), 'ml': (0, 6000), 'dv': (0, 7000)},
+        'VS': {'ap': (0, 6000), 'ml': (0, 6000), 'dv': (4000, 7000)},
         'MOs-a': {'ap': (2500, 5000), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
         'MOs-m': {'ap': (1500, 2500), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
         'MOs-p': {'ap': (0, 1500), 'ml': (-np.inf, np.inf), 'dv': (-np.inf, np.inf)},
     }
 
+    # Explicit assignment priority order — highest to lowest
+    df['__assigned'] = False # temp col to track has been assigned
+
     for parent_area, subdivisions in parent_child_dict.items():
         # Filter rows belonging to the parent area once
-        parent_mask = df['area_acronym_custom'] == parent_area
-
         for sub_area in subdivisions:
+
             bounds = coord_boundaries[sub_area]
+            unassigned_mask = ~df['__assigned']
+
+            # For ventral striatum (VS), also include non-parent like STR, ACB (NAc)
+            if sub_area == 'VS':
+                parent_mask = (df['area_acronym_custom'].isin([parent_area,'STR','ACB'])
+                               & unassigned_mask)
+            else:
+                parent_mask = (df['area_acronym_custom'] == parent_area) & unassigned_mask
 
             # Create masks for each axis considering infinite bounds
             ap_mask = df['ap'].between(*bounds['ap']) if np.isfinite(bounds['ap'][0]) and np.isfinite(bounds['ap'][1]) \
@@ -412,16 +431,36 @@ def create_areas_subdivisions(df):
 
             mask = parent_mask & ap_mask & ml_mask & dv_mask
             df.loc[mask, 'area_acronym_custom'] = sub_area
+            df.loc[mask, '__assigned'] = True  # Mark as assigned
+            print(f"{sub_area}: {mask.sum()} voxels assigned")
 
+        # Check that subdivisions were applied correctly
+        print(parent_area, len(df[df['area_acronym_custom'] == parent_area]))
+
+
+    # Filter: unassigned & CP neurons only
+    unassigned_cp = df[(~df['__assigned']) & (df['area_acronym_custom'].isin(['CP','STR','ACB']))]
+
+    # Show number of unassigned CP voxels
+    print(f"Unassigned CP neurons: {len(unassigned_cp)}")
+
+    # Show their coordinates
+    print(unassigned_cp)
+    print(min(unassigned_cp['ap']), max(unassigned_cp['ap']))
+    print(min(unassigned_cp['ml']), max(unassigned_cp['ml']))
+    print(min(unassigned_cp['dv']), max(unassigned_cp['dv']))
+
+    df.drop(columns=['__assigned'], inplace=True)  # Remove temp column
     return df
 
-def process_allen_labels(df, params):
+def process_allen_labels(df, subdivide_areas=False):
     """
     Process the DataFrame to create custom area acronyms, layer numbers, and bregma-centric coordinates.
     :param df: unit_table pd.DataFrame from NWB files
     :param params: dictionary of parameters
     :return:
     """
+    print('Processing CCF labels...')
     # Create custom area acronyms simplifying ccf areas acronyms
     df = create_area_custom_column(df)
 
@@ -435,7 +474,7 @@ def process_allen_labels(df, params):
     df = create_bregma_centric_coords_from_ccf(df)
 
     # Create areas subdivisions for specific areas using custom boundaries
-    if params['subdivide_areas']:
+    if subdivide_areas:
         df = create_areas_subdivisions(df)
 
     return df
