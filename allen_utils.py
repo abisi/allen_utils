@@ -389,13 +389,12 @@ def create_areas_subdivisions(df):
     :return:
     """
     parent_child_dict = {
-        'CP': ['DLS', 'DMS', 'VS', 'TS'], # assignment order
+        'CP': ['VS', 'DLS', 'DMS', 'TS'], # assignment order
         'MOs': ['MOs-a', 'MOs-m', 'MOs-p']
     }
 
     coord_boundaries = {
         'DMS': {'ap': (-1500, 6000), 'ml': (0, 2300), 'dv': (0, 7000)},
-        #'DLS': {'ap': (-1500, 150), 'ml': (2300, 6000), 'dv': (0, 7000)},
         'DLS': {'ap': (-1500, 6000), 'ml': (2300, 6000), 'dv': (0, 7000)},
         'TS': {'ap': (-6000, -1500), 'ml': (0, 6000), 'dv': (0, 7000)},
         'VS': {'ap': (0, 6000), 'ml': (0, 6000), 'dv': (4000, 7000)},
@@ -435,7 +434,8 @@ def create_areas_subdivisions(df):
             print(f"{sub_area}: {mask.sum()} voxels assigned")
 
         # Check that subdivisions were applied correctly
-        print(parent_area, len(df[df['area_acronym_custom'] == parent_area]))
+        print('Unassigned', parent_area, len(df[df['area_acronym_custom'] == parent_area]))
+
 
     # Remove temp col
     df.drop(columns=['__assigned'], inplace=True)
