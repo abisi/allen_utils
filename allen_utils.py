@@ -437,20 +437,8 @@ def create_areas_subdivisions(df):
         # Check that subdivisions were applied correctly
         print(parent_area, len(df[df['area_acronym_custom'] == parent_area]))
 
-
-    # Filter: unassigned & CP neurons only
-    unassigned_cp = df[(~df['__assigned']) & (df['area_acronym_custom'].isin(['CP','STR','ACB']))]
-
-    # Show number of unassigned CP voxels
-    print(f"Unassigned CP neurons: {len(unassigned_cp)}")
-
-    # Show their coordinates
-    print(unassigned_cp)
-    print(min(unassigned_cp['ap']), max(unassigned_cp['ap']))
-    print(min(unassigned_cp['ml']), max(unassigned_cp['ml']))
-    print(min(unassigned_cp['dv']), max(unassigned_cp['dv']))
-
-    df.drop(columns=['__assigned'], inplace=True)  # Remove temp column
+    # Remove temp col
+    df.drop(columns=['__assigned'], inplace=True)
     return df
 
 def process_allen_labels(df, subdivide_areas=False):
