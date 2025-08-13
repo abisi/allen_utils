@@ -112,7 +112,6 @@ def generalize_region(region):
         "NLL":"Pons",
         "NPC":"MB",
         "ORB": "ORB",
-        "P":"Pons", # make sure it's only Pons
         "PAL": "PAL",
         "PIL":"ILM", # confirm, also, use DORpm vs DORsm ? PIL-PP in lit.
         "PIR":"OLF",
@@ -211,6 +210,13 @@ def create_ccf_acronym_no_layer_column(df):
     df['ccf_acronym_no_layer'] = df.apply(
         lambda row: handle_ssp_bfd(row['ccf_parent_acronym']) if contains_layer(row['ccf_acronym']) else row['ccf_acronym'], axis=1)
     return df
+
+def get_target_region_order():
+    """
+    Get a set order of target regions for plotting.
+    :return:
+    """
+    return ['wS1', 'wS2', 'A1', 'PPC', 'DLS', 'wM1', 'wM2', 'tjM1', 'ALM', 'OFC', 'SC']
 
 def get_custom_area_order():
     """
@@ -316,11 +322,14 @@ def apply_target_region_filters(peth_table, area):
         'mPFC': ['PL', 'ILA', 'ACA', 'ACAd', 'ACAv'],
         'tjM1': ['MOp', 'MOs'],
         'A1': ['AUD', 'AUDd', 'AUDp', 'AUDv', 'AUDpo'],
-        'DLS': ['STRd', 'CP'],
+        'DLS': ['STRd', 'CP', 'DLS'],
+        'DMS': ['STRd', 'CP', 'DMS'],
+        'VS': ['STRv', 'STR', 'ACB', 'CP', 'VS'],
+        'TS': ['STRd', 'STR', 'CP', 'TS'],
         'SC': ['SC', 'SCs', 'SCiw', 'SCop', 'SCm', 'SCzo', 'SCsg'],
         'OFC': ['ORB', 'ORBm', 'ORBl', 'ORBvl'],
         'ALM': ['MOp', 'MOs'],
-        'PPC': ['VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr'],
+        'PPC': ['VIS', 'VISa', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr', 'SSp-un', 'SSp-bfd'],
     }
 
     if area in specific_filters.keys():
@@ -431,7 +440,7 @@ def create_areas_subdivisions(df):
             mask = parent_mask & ap_mask & ml_mask & dv_mask
             df.loc[mask, 'area_acronym_custom'] = sub_area
             df.loc[mask, '__assigned'] = True  # Mark as assigned
-            print(f"{sub_area}: {mask.sum()} voxels assigned")
+            print(f"{sub_area}: {mask.sum()} units assigned")
 
         # Check that subdivisions were applied correctly
         print('Unassigned', parent_area, len(df[df['area_acronym_custom'] == parent_area]))
