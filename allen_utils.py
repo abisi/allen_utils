@@ -20,11 +20,18 @@ def get_cortical_areas():
     :return: List of cortical area acronyms
     """
     return [
-        'FRP', 'MOp', 'MOs', 'SSp-bfd', 'SSp-m', 'SSp-ul', 'SSp-ll', 'SSp-un', 'SSp-n', 'SSp-tr',
-        'SSs', 'AUDp', 'AUDd', 'AUDv', 'ACA', 'ACAv', 'ACAd', 'VISa', 'VISp', 'VISam', 'VISl',
-        'VISpm', 'VISrl', 'VISal', 'PL', 'ILA', 'ORB', 'RSP', 'RSPv', 'RSPd','RSPagl', 'TT', 'SCm',
-        'SCsg', 'SCzo', 'SCiw', 'SCop', 'SCs', 'ORBm', 'ORBl', 'ORBvl', 'AId',
-        'AIv', 'AIp', 'FRP', 'VISC'
+        'FRP', 'MOp',
+        'MOs', 'MOs-a', 'MOs-m', 'MOs-p',
+        'SSp-bfd', 'SSp-m', 'SSp-ul', 'SSp-ll', 'SSp-un', 'SSp-n', 'SSp-tr',
+        'SSs', 'AUD', 'AUDp', 'AUDd', 'AUDv',
+        'ACA', 'ACAv', 'ACAd',
+        'VIS','VISa', 'VISp', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal',
+        'PL', 'ILA',
+        'RSP', 'RSPv', 'RSPd','RSPagl', 'TT',
+        'SCm', 'SCsg', 'SCzo', 'SCiw', 'SCop', 'SCs',
+        'ORB', 'ORBm', 'ORBl', 'ORBvl',
+        'AId', 'AIv', 'AIp',
+        'FRP', 'VISC'
     ]
 
 def get_allen_color_dict():
@@ -157,7 +164,10 @@ def generalize_region(region):
         return "SSp-bfd"
 
     if region.startswith("VIS"):
-        return "VISC" if region.startswith("VISC") else "VIS"
+        if region.startswith('VISC'):
+            return 'VISC'
+        else:
+            return 'VIS'
 
     return region  # Default: no change
 
@@ -316,11 +326,11 @@ def apply_target_region_filters(peth_table, area):
     """
     specific_filters = {
         'wS1': ['SSp-bfd'],
-        'wM1': ['MOp', 'MOs'],
+        'wM1': ['MOp', 'MOs', 'MOs-a', 'MOs-m','MOs-p','SSp-ll'],
         'wS2': ['SSs', 'SSp-bfd'],
-        'wM2': ['MOp', 'MOs'],
+        'wM2': ['MOp', 'MOs', 'MOs-a', 'MOs-m', 'MOs-p', 'SSp-ll'],
         'mPFC': ['PL', 'ILA', 'ACA', 'ACAd', 'ACAv'],
-        'tjM1': ['MOp', 'MOs'],
+        'tjM1': ['MOp', 'MOs', 'SSp-m', 'MOs-a', 'MOs-m', 'MOs-p'],
         'A1': ['AUD', 'AUDd', 'AUDp', 'AUDv', 'AUDpo'],
         'DLS': ['STRd', 'CP', 'DLS'],
         'DMS': ['STRd', 'CP', 'DMS'],
@@ -328,7 +338,7 @@ def apply_target_region_filters(peth_table, area):
         'TS': ['STRd', 'STR', 'CP', 'TS'],
         'SC': ['SC', 'SCs', 'SCiw', 'SCop', 'SCm', 'SCzo', 'SCsg'],
         'OFC': ['ORB', 'ORBm', 'ORBl', 'ORBvl'],
-        'ALM': ['MOp', 'MOs'],
+        'ALM': ['MOp', 'MOs', 'MOS-a', 'MOs-m', 'MOs-p'],
         'PPC': ['VIS', 'VISa', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr', 'SSp-un', 'SSp-bfd'],
     }
 
@@ -357,7 +367,10 @@ def create_bregma_centric_coords_from_ccf(df):
     # TODO: update fcn after new NWBs
     new_nwb_mice = ['AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
                     'AB102', 'AB104', 'AB107',
-                    'AB129', 'AB130']
+                    'AB129', 'AB130',
+                    'AB158',
+                    'AB164'
+                    ]
 
     # Define conversion functions (all in um)
     #ml = (self.channels['x'] * 1e6) + 5739
