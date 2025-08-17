@@ -367,8 +367,10 @@ def create_bregma_centric_coords_from_ccf(df):
     # TODO: update fcn after new NWBs
     new_nwb_mice = ['AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
                     'AB102', 'AB104', 'AB107',
-                    'AB129', 'AB130',
-                    'AB158',
+                    'AB116', 'AB117', 'AB119', 'AB120', 'AB121', 'AB122', 'AB123', 'AB124', 'AB125', 'AB126', 'AB127', 'AB128', 'AB129',
+                    'AB130', 'AB131', 'AB132', 'AB133', 'AB134', #AB135
+                    'AB36', 'AB137', 'AB138', 'AB139', 'AB140', 'AB141', 'AB142', 'AB143', 'AB144', 'AB145', 'AB146', 'AB147', 'AB148', 'AB149',
+                    'AB150', 'AB152', 'AB157', 'AB158', 'AB159',
                     'AB164'
                     ]
 
