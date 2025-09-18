@@ -340,6 +340,7 @@ def apply_target_region_filters(peth_table, area):
         'OFC': ['ORB', 'ORBm', 'ORBl', 'ORBvl'],
         'ALM': ['MOp', 'MOs', 'MOS-a', 'MOs-m', 'MOs-p'],
         'PPC': ['VIS', 'VISa', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal', 'SSp-tr', 'SSp-un', 'SSp-bfd'],
+        'V1': ['VIS', 'VISa', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal']
     }
 
     if area in specific_filters.keys():
