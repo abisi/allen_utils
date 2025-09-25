@@ -200,7 +200,13 @@ def create_area_custom_column(df):
     :param df: A pandas DataFrame containing 'ccf_acronym' and 'ccf_parent_acronym' columns.
     :return: DataFrame with a new column 'area_acronym_custom'.
     """
-    df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row['ccf_acronym'], row['ccf_parent_acronym']), axis=1)
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
+    df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row[col], row[col_parent]), axis=1)
     return df
 
 def extract_layer_info(ccf_acronym):
@@ -214,14 +220,26 @@ def extract_layer_info(ccf_acronym):
 
 def create_layer_number_column(df):
     """Create a column 'layer_number' that only extracts layer information."""
-    df['layer_number'] = df['ccf_acronym'].apply(extract_layer_info)
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
+    df['layer_number'] = df[col].apply(extract_layer_info)
     return df
 
 
 def create_ccf_acronym_no_layer_column(df):
     """Create a column 'ccf_acronym_no_layer' that keeps the original ccf_acronym unless it contains a layer number, in which case it uses the parent acronym."""
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
     df['ccf_acronym_no_layer'] = df.apply(
-        lambda row: handle_ssp_bfd(row['ccf_parent_acronym']) if contains_layer(row['ccf_acronym']) else row['ccf_acronym'], axis=1)
+        lambda row: handle_ssp_bfd(row[col_parent]) if contains_layer(row[col]) else row[col], axis=1)
     return df
 
 def get_target_region_order():
