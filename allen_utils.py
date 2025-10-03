@@ -13,6 +13,9 @@ import pandas as pd
 import numpy as np
 import re
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+
 
 def get_cortical_areas():
     """
@@ -102,7 +105,7 @@ def generalize_region(region):
         "IGL":"LGN",
         "IntG":"LGN",
         "INC":"PAG",
-        "LD":"ATN",
+        "LD":"LGN",
         "LGd": "LGN",
         "LGv": "LGN",
         "LH":"HA",
@@ -110,7 +113,7 @@ def generalize_region(region):
         "LT": "MY",
         "MD":"MED",
         "MH":"HA",
-        "MS":"LGN",
+        "MS":"PAL",
         "MGm":"MGN",
         "MGv":"MGN",
         "MGd":"MGN",
@@ -132,7 +135,7 @@ def generalize_region(region):
         "PRNr":"Pons",
         "RE":"MTN",
         "RPF":"MB",
-        "RR":"MRN",
+        "RR":"MB",
         "RSP": "RSP",
         "SAG":"MB",
         "SGN":"LAT",
@@ -144,7 +147,7 @@ def generalize_region(region):
         "TRS":"PAL",
         "VPL": "VPL",
         "VPM": "VPM",
-        "VM":"VPM",
+        "VM":"VM",
         "Xi":"MTN"
     }
     for key in region_map:
@@ -197,11 +200,17 @@ def create_area_custom_column(df):
     :param df: A pandas DataFrame containing 'ccf_acronym' and 'ccf_parent_acronym' columns.
     :return: DataFrame with a new column 'area_acronym_custom'.
     """
-    df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row['ccf_acronym'], row['ccf_parent_acronym']), axis=1)
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
+    df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row[col], row[col_parent]), axis=1)
     return df
 
 def extract_layer_info(ccf_acronym):
-    """Extract and return layer information from a region name."""
+    """Extract and return layer information from a regionF name."""
     match = re.search(r'(\d+[a-zA-Z]*)', ccf_acronym)
     if match:
         layer = match.group(0)
@@ -211,14 +220,26 @@ def extract_layer_info(ccf_acronym):
 
 def create_layer_number_column(df):
     """Create a column 'layer_number' that only extracts layer information."""
-    df['layer_number'] = df['ccf_acronym'].apply(extract_layer_info)
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
+    df['layer_number'] = df[col].apply(extract_layer_info)
     return df
 
 
 def create_ccf_acronym_no_layer_column(df):
     """Create a column 'ccf_acronym_no_layer' that keeps the original ccf_acronym unless it contains a layer number, in which case it uses the parent acronym."""
+    if 'ccf_atlas_acronym' in df.columns:
+        col='ccf_atlas_acronym'
+        col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
     df['ccf_acronym_no_layer'] = df.apply(
-        lambda row: handle_ssp_bfd(row['ccf_parent_acronym']) if contains_layer(row['ccf_acronym']) else row['ccf_acronym'], axis=1)
+        lambda row: handle_ssp_bfd(row[col_parent]) if contains_layer(row[col]) else row[col], axis=1)
     return df
 
 def get_target_region_order():
@@ -316,6 +337,32 @@ def get_custom_area_color_per_group():
     area_color_list = list(area_color_dict.values())
     return area_color_dict, area_color_list
 
+def create_legend_figure(color_dict, rectangles=True, title='Legend'):
+    """
+    Create a legend figure for the areas with their corresponding colors.
+    :param color_dict: A dictionary mapping strings to colors (e.g., {"Label": "#ff0000"}).
+    :param rectangles:  If True, use colored rectangles; otherwise, color the text directly.
+    :param title: Title for the legend figure.
+    :return: a figure containing the legend.
+    """
+
+    #color_dict = get_custom_area_groups_colors()
+
+    fig, ax = plt.subplots(figsize=(2, 3), dpi=300)
+    ax.axis('off')  # Turn off the axes for a cleaner look
+
+    legend_elements = [Patch(facecolor=color, label=label) for label, color in color_dict.items()]
+    ax.legend(handles=legend_elements, loc='upper left', frameon=False, title=title)
+    fig.tight_layout()
+
+    #figname = 'allen_area_group_legend.png'
+    #fig.savefig(os.path.join(FIGURE_PATH, figname), dpi=300, bbox_inches='tight')
+    #figname = 'allen_area_group_legend.svg'
+    #fig.savefig(os.path.join(FIGURE_PATH, figname), dpi=300, bbox_inches='tight')
+
+    return fig
+
+
 def apply_target_region_filters(peth_table, area):
     """
     Apply specific area filters based on the area name.
@@ -367,10 +414,12 @@ def create_bregma_centric_coords_from_ccf(df):
 
     # TODO: update fcn after new NWBs
     new_nwb_mice = ['AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
-                    'AB102', 'AB104', 'AB107',
-                    'AB129', 'AB130',
-                    'AB158',
-                    'AB164'
+                    'AB102', 'AB104', 'AB107', #AB105
+                    'AB116', 'AB117', 'AB119', 'AB120', 'AB121', 'AB122', 'AB123', 'AB124', 'AB125', 'AB126', 'AB127', 'AB128', 'AB129',
+                    'AB130', 'AB131', 'AB132', 'AB133', 'AB134', #AB135
+                    'AB136', 'AB137', 'AB138', 'AB139', 'AB140', 'AB141', 'AB142', 'AB143', 'AB144', 'AB145', 'AB146', 'AB147', 'AB148', 'AB149', #AB144
+                    'AB150', 'AB151', 'AB152', 'AB153', 'AB154', 'AB155', 'AB156', 'AB157', 'AB158', 'AB159',
+                    'AB161', 'AB162', 'AB163', 'AB164'
                     ]
 
     # Define conversion functions (all in um)
