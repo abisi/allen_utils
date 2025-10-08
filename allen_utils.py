@@ -71,6 +71,7 @@ def get_excluded_areas():
     return excluded_areas
 
 
+
 def contains_layer(region):
     """Check if a region name contains a layer number excluding CA1, CA2, and CA3."""
     if region in ['CA1', 'CA2', 'CA3']:
@@ -200,13 +201,15 @@ def create_area_custom_column(df):
     :param df: A pandas DataFrame containing 'ccf_acronym' and 'ccf_parent_acronym' columns.
     :return: DataFrame with a new column 'area_acronym_custom'.
     """
-    if 'ccf_atlas_acronym' in df.columns:
-        col='ccf_atlas_acronym'
-        col_parent='ccf_atlas_parent_acronym'
-    else:
-        col='ccf_acronym'
-        col_parent='ccf_parent_acronym'
-    df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row[col], row[col_parent]), axis=1)
+    def simplify_per_nomenclature(row):
+        # Prefer ephys-align atlas fields if they exist and are not NaN
+        if ('ccf_atlas_acronym' in row) and ('ccf_atlas_parent_acronym' in row):
+            return simplify_area(row['ccf_atlas_acronym'], row.get('ccf_atlas_parent_acronym', None))
+        else:
+            return simplify_area(row['ccf_acronym'], row.get('ccf_parent_acronym', None))
+
+    df['area_acronym_custom'] = df.apply(simplify_per_nomenclature, axis=1)
+    #df['area_acronym_custom'] = df.apply(lambda row: simplify_area(row[col], row[col_parent]), axis=1)
     return df
 
 def extract_layer_info(ccf_acronym):
@@ -218,21 +221,20 @@ def extract_layer_info(ccf_acronym):
     return None
 
 
-def create_layer_number_column(df):
+def create_layer_number_column(df): #TODO: update with new NWBs after ephys-align
     """Create a column 'layer_number' that only extracts layer information."""
     if 'ccf_atlas_acronym' in df.columns:
         col='ccf_atlas_acronym'
-        col_parent='ccf_atlas_parent_acronym'
     else:
         col='ccf_acronym'
-        col_parent='ccf_parent_acronym'
+    col = 'ccf_acronym'
     df['layer_number'] = df[col].apply(extract_layer_info)
     return df
 
 
 def create_ccf_acronym_no_layer_column(df):
     """Create a column 'ccf_acronym_no_layer' that keeps the original ccf_acronym unless it contains a layer number, in which case it uses the parent acronym."""
-    if 'ccf_atlas_acronym' in df.columns:
+    if 'ccf_atlas_acronym' in df.columns and 'ccf_atlas_parent_acronym' in df.columns:
         col='ccf_atlas_acronym'
         col_parent='ccf_atlas_parent_acronym'
     else:
@@ -412,7 +414,7 @@ def create_bregma_centric_coords_from_ccf(df):
     df[['ccf_ap', 'ccf_ml', 'ccf_dv']] = df[['ccf_ap', 'ccf_ml', 'ccf_dv']].astype(float)
 
     # TODO: update fcn after new NWBs
-    new_nwb_mice = ['AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
+    new_nwb_mice = ['AB077', 'AB080', 'AB082', 'AB085', 'AB086', 'AB087', 'AB092', 'AB093', 'AB094', 'AB095',
                     'AB102', 'AB104', 'AB107', #AB105
                     'AB116', 'AB117', 'AB119', 'AB120', 'AB121', 'AB122', 'AB123', 'AB124', 'AB125', 'AB126', 'AB127', 'AB128', 'AB129',
                     'AB130', 'AB131', 'AB132', 'AB133', 'AB134', #AB135
@@ -520,6 +522,7 @@ def process_allen_labels(df, subdivide_areas=False):
     :return:
     """
     print('Processing CCF labels...')
+
     # Create custom area acronyms simplifying ccf areas acronyms
     df = create_area_custom_column(df)
 
