@@ -525,13 +525,13 @@ def process_allen_labels(df, subdivide_areas=False):
     df = create_area_custom_column(df)
 
     # Create layer number column
-    df = create_layer_number_column(df)
+    # df = create_layer_number_column(df)
 
     # Create a ccf_acronym_no_layer column, copy of ccf_acronym just without layer info
-    df = create_ccf_acronym_no_layer_column(df)
+    # df = create_ccf_acronym_no_layer_column(df)
 
     # Create bregma-centric coordinates, going from CCf (BrainGlobe) to bregma-centric coordinates using IBL bregma estimate
-    df = create_bregma_centric_coords_from_ccf(df)
+    # df = create_bregma_centric_coords_from_ccf(df)
 
     # Create areas subdivisions for specific areas using custom boundaries
     if subdivide_areas:
