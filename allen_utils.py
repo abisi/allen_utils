@@ -70,16 +70,19 @@ def get_excluded_areas():
                       ]
     return excluded_areas
 
-
 def contains_layer(region):
-    """Check if a region name contains a layer number excluding CA1, CA2, and CA3."""
+    """Check if a region name contains a layer number, excluding CA1, CA2, and CA3."""
+    if not isinstance(region, str):
+        return np.nan  # skip None, NaN, or non-strings safely
     if region in ['CA1', 'CA2', 'CA3']:
         return False
-    else:
-        return bool(re.search(r'\d+[a-zA-Z]*', region))  # e.g., "6a", "6b"
+    return bool(re.search(r'\d+[a-zA-Z]*', region))  # e.g., "6a", "6b"
+
 
 def generalize_region(region):
     """Generalize region names based on predefined rules."""
+    if not isinstance(region, str):
+        return np.nan
     region_map = {
         "ACA": "ACA",
         "AD":"ATN",
@@ -177,6 +180,8 @@ def generalize_region(region):
 
 def handle_ssp_bfd(region):
     """Special case: handle SSp-bfd barrels (e.g., "SSp-bfd-C4" -> "SSp-bfd")."""
+    if not isinstance(region, str):
+        return np.nan
     return re.sub(r'SSp-bfd-[A-Z]\d+', 'SSp-bfd', region) if "SSp-bfd" in region else region
 
 
@@ -186,6 +191,43 @@ def simplify_area(ccf_acronym, ccf_parent_acronym):
     base_region = ccf_acronym if not contains_layer(ccf_acronym) or ccf_acronym in ['CA1', 'CA2',
                                                                                     'CA3'] else ccf_parent_acronym
     return handle_ssp_bfd(generalize_region(base_region))
+
+
+def load_liu_et_al_avg_ipsi():
+    """
+    Load the Liu et al. group averages data and return a mapping from area acronym to avg_ipsi.
+    :return: Dictionary mapping area acronym to avg_ipsi value.
+    """
+    liu_path = r'M:\analysis\Myriam_Hamon\combined_data\processed_data\Liu_et_al_Group_averages_ranked.xlsx'
+    liu_df = pd.read_excel(liu_path)
+    print(liu_df.keys())
+    # First two rows are headers, actual data starts from row index 2
+    liu_df = liu_df.iloc[2:].reset_index(drop=True)
+    liu_df = liu_df.rename(columns={'Unnamed: 0': 'acronym'})
+    liu_df = liu_df[['acronym', 'avg_ipsi']].dropna(subset=['acronym'])
+    liu_df['avg_ipsi'] = pd.to_numeric(liu_df['avg_ipsi'], errors='coerce')
+    return liu_df.set_index('acronym')['avg_ipsi'].to_dict()
+
+
+def merge_liu_avg_ipsi(df, col_parent):
+    """
+    Merge Liu et al. avg_ipsi values onto the DataFrame.
+    First tries matching on 'area_acronym_custom', then falls back to the parent acronym column.
+
+    :param df: DataFrame with 'area_acronym_custom' column.
+    :param col_parent: Name of the parent acronym column to use as fallback.
+    :return: DataFrame with a new 'avg_ipsi' column.
+    """
+    liu_avg_ipsi = load_liu_et_al_avg_ipsi()
+
+    # First try matching on area_acronym_custom
+    df['avg_ipsi_corr'] = df['area_acronym_custom'].map(liu_avg_ipsi)
+
+    # For rows without a match, fall back to parent acronym
+    missing_mask = df['avg_ipsi_corr'].isna()
+    df.loc[missing_mask, 'avg_ipsi_corr'] = df.loc[missing_mask, col_parent].map(liu_avg_ipsi)
+
+    return df
 
 
 def create_area_custom_column(df):
@@ -198,9 +240,10 @@ def create_area_custom_column(df):
     - Handles specific cases like SSp-bfd barrel indications (e.g., SSp-bfd-C4 -> SSp-bfd).
 
     :param df: A pandas DataFrame containing 'ccf_acronym' and 'ccf_parent_acronym' columns.
-    :return: DataFrame with a new column 'area_acronym_custom'.
+    :return: DataFrame with new columns 'area_acronym_custom' and 'avg_ipsi'.
     """
-    if 'ccf_atlas_acronym' in df.columns:
+
+    if 'ccf_atlas_acronym' in df.columns and 'ccf_atlas_parent_acronym' in df.columns :
         col='ccf_atlas_acronym'
         col_parent='ccf_atlas_parent_acronym'
     else:
@@ -259,7 +302,7 @@ def get_custom_area_order():
                   'CLA', 'EP',
                   'CA1', 'CA2', 'CA3', 'DG', 'HPF',
                   'CP', 'DMS', 'DLS', 'TS', 'STR', 'ACB', 'VS', 'LS', 'SF', 'GPe', 'PAL', 'MS',
-                  'VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA',
+                  'VPL', 'VPM', 'LD', 'RT', 'PO', 'LGN', 'LP', 'ATN', 'LAT', 'MGN', 'MED', 'MTN', 'ILM', 'HA','TH',
                   'SCs', 'SCm', 'MB', 'VTA', 'MRN', 'PAG', 'RN', 'SNr',
                   'Pons', 'MY',
                   'AON', 'OLF', 'PIR',
@@ -516,6 +559,7 @@ def create_areas_subdivisions(df):
 def process_allen_labels(df, subdivide_areas=False):
     """
     Process the DataFrame to create custom area acronyms, layer numbers, and bregma-centric coordinates.
+    Also merges Liu et al. avg_ipsi values onto the DataFrame.
     :param df: unit_table pd.DataFrame from NWB files
     :param params: dictionary of parameters
     :return:
@@ -523,6 +567,19 @@ def process_allen_labels(df, subdivide_areas=False):
     print('Processing CCF labels...')
     # Create custom area acronyms simplifying ccf areas acronyms
     df = create_area_custom_column(df)
+
+    if 'ccf_atlas_acronym' in df.columns and 'ccf_atlas_parent_acronym' in df.columns :
+            col='ccf_atlas_acronym'
+            col_parent='ccf_atlas_parent_acronym'
+    else:
+        col='ccf_acronym'
+        col_parent='ccf_parent_acronym'
+
+
+        
+    # Merge Liu et al. avg_ipsi values
+    df = merge_liu_avg_ipsi(df, col_parent)
+
 
     # Create layer number column
     # df = create_layer_number_column(df)
