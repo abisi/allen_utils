@@ -830,8 +830,11 @@ def load_liu_et_al_avg_ipsi():
     Load the Liu et al. group averages data and return a mapping from area acronym to avg_ipsi.
     :return: Dictionary mapping area acronym to avg_ipsi value.
     """
-    liu_path = r'M:\analysis\Myriam_Hamon\combined_data\processed_data\Liu_et_al_Group_averages_ranked.xlsx'
-    liu_df = pd.read_excel(liu_path)
+    try:
+        liu_path = r'M:\analysis\Myriam_Hamon\combined_data\processed_data\Liu_et_al_Group_averages_ranked.xlsx'
+        liu_df = pd.read_excel(liu_path)
+    except Exception as err:
+        print('Could not read Liu et al data', err)
     print(liu_df.keys())
     # First two rows are headers, actual data starts from row index 2
     liu_df = liu_df.iloc[2:].reset_index(drop=True)
@@ -858,5 +861,6 @@ def merge_liu_avg_ipsi(df, col_parent):
     # For rows without a match, fall back to parent acronym
     missing_mask = df['avg_ipsi_corr'].isna()
     df.loc[missing_mask, 'avg_ipsi_corr'] = df.loc[missing_mask, col_parent].map(liu_avg_ipsi)
+
 
     return df
