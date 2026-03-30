@@ -224,11 +224,6 @@ def create_area_custom_column(df):
             region = simplify_area(row['ccf_acronym'], row.get('ccf_parent_acronym', None))
 
         # Apply PPC unification (row context available here)
-        #try:
-        #    region = handle_ppc(region, row)
-        #except KeyError as err: # If no row['target_region']
-        #    region = region
-
         return region
 
     df['area_acronym_custom'] = df.apply(simplify_per_nomenclature, axis=1)
@@ -298,8 +293,8 @@ def get_custom_area_order():
     """
     Get the order of brain areas for plotting.
     """
-    area_order = ['MOp', 'MOs', 'MO-tjM1', 'MO-ALM', 'MO-wM1', 'MO-wM2', 'mPFC', 'FRP', 'ACA', 'PL', 'ORB',
-                  'SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un', 'VISC', 'GU', 'AI',
+    area_order = ['MOp', 'MOs', 'MO-tjM1', 'MO-ALM', 'MO-wM1', 'MO-wM2', 'mPFC', 'FRP', 'ACA', 'PL', 'ORB', 'AI',
+                  'SSp-bfd', 'SSs', 'SSp-m', 'SSp-n', 'SSp-ul', 'SSp-ll', 'SSp-tr', 'SSp-un', 'VISC', 'GU',
                   'AUD', 'TEa', 'RSP', 'PPC', 'VIS', 'VISa', 'VISp', 'VISam', 'VISl', 'VISpm', 'VISrl', 'VISal',
                   'CLA', 'EP', 'CTXsp',
                   'CA1', 'CA2', 'CA3', 'DG', 'HPF',
