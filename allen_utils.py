@@ -663,7 +663,7 @@ def process_allen_labels(df, subdivide_areas=False):
     """
 
     # Check if processing can be performed
-    required_cols = ['target_region', 'ccf_acronym', 'ccf_parent_acronym', 'ccf_atlas_acronym', 'ccf_atlas_parent_acronym', 'ccf_ap', 'ccf_ml', 'ccf_dv', 'mouse_id']
+    required_cols = ['target_region', 'ccf_atlas_acronym', 'ccf_atlas_parent_acronym', 'ccf_ap', 'ccf_ml', 'ccf_dv', 'mouse_id']
     if not all(col in df.columns for col in required_cols):
         missing_cols = [col for col in required_cols if col not in df.columns]
         print(f'allen_utils.process_allen_labels: Warning - missing required columns for processing. Available columns: {df.columns}, Missing: {missing_cols}')
