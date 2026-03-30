@@ -835,11 +835,13 @@ def load_liu_et_al_avg_ipsi():
     :return: Dictionary mapping area acronym to avg_ipsi value.
     """
     try:
-        liu_path = r'M:\analysis\Axel_Bisi\combined_data\processed_data\Liu_et_al_Group_averages_ranked.xlsx'
+        # Get relative path from here to data file
+        filename = 'Liu_et_al_Group_averages_ranked.xlsx'
+        path_to_data = pathlib.Path(__file__).parent.parent / 'allen_utils' / 'data'
+        liu_path = path_to_data / filename
     except FileNotFoundError as err:
-        liu_path = r'\mnt\lsens-analysis\Axel_Bisi\combined_data\processed_data\Liu_et_al_Group_averages_ranked.xlsx'
+        print(err)
 
-    liu_path  = pathlib.Path('/mnt/lsens-analysis/Axel_Bisi/combined_data/processed_data/Liu_et_al_Group_averages_ranked.xlsx')
     liu_df = pd.read_excel(liu_path)
     print(liu_df.keys())
     # First two rows are headers, actual data starts from row index 2
