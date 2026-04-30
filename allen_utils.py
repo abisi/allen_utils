@@ -692,9 +692,7 @@ def process_allen_labels(df, subdivide_areas=False):
     # Create areas subdivisions for specific areas using custom boundaries
     if subdivide_areas:
         df = create_areas_subdivisions(df, verbose=False)
-        print(df.area_acronym_custom.unique())
         df = create_area_groupings(df, verbose=False)
-        print(df.area_acronym_custom.unique())
 
     return df
 
