@@ -234,7 +234,7 @@ def extract_layer_info_original(ccf_acronym):
     match = re.search(r'(\d+[a-zA-Z]*)', ccf_acronym)
     if match:
         layer = match.group(0)
-        return "2/3" if layer == "2" else layer
+        return "2/3" if layer in ["2", "3"] else layer
     return None
 
 def extract_layer_info(ccf_acronym):
@@ -266,7 +266,7 @@ def create_layer_number_column(df):
         col='ccf_atlas_acronym'
     else:
         col='ccf_acronym'
-    df['layer_number'] = df[col].apply(extract_layer_info) #Check which is nans
+    df['layer_number'] = df[col].apply(extract_layer_info_original) #Check which is nans
     return df
 
 
@@ -501,7 +501,7 @@ def create_bregma_centric_coords_from_ccf(df):
                     'AB150', 'AB151', 'AB152', 'AB153', 'AB154', 'AB155', 'AB156', 'AB157', 'AB158', 'AB159',
                     'AB161', 'AB162', 'AB163', 'AB164'
                     ]
-    mh_mice = [f'MH{str(i).zfill(3)}' for i in range(40)]
+    mh_mice = [f'MH{str(i).zfill(3)}' for i in range(80)]
     new_nwb_mice.extend(mh_mice)
 
 
